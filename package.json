@@ -4,7 +4,7 @@
   "description": "Termux wrapper for OpenCode CLI (upstream: @opencode/cli-linux-arm64)",
   "license": "GPL-3.0-only",
   "bin": {
-    "opencode-termux": "./bin/opencode-termux"
+    "opencode": "./bin/opencode-termux"
   },
   "files": [
     "bin",
