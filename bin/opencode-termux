@@ -1,0 +1,37 @@
+#!/usr/bin/env node
+'use strict';
+const path = require('path');
+const { execFileSync } = require('child_process');
+const { setup } = require('../lib/setup');
+const { GLIBC_LIB_DIR } = require('../lib/patcher');
+
+// package.jsonから対象バージョンを読む(このパッケージ自体のversionフィールドを、
+// 「対応するupstream @opencode/cli-linux-arm64のバージョン」として扱う設計)
+const pkg = require('../package.json');
+const TARGET_VERSION = pkg.opencodeVersion || pkg.version; // ★opencodeVersionフィールドが
+                                                             // 無ければpackage.json自体のversionを使う
+                                                             // (フェーズAでは暫定、後続フェーズで
+                                                             // config/opencode-verified-versions.jsonから
+                                                             // 読む形に差し替える可能性がある旨コメントを残す)
+
+async function main() {
+  let target;
+  try {
+    target = await setup(TARGET_VERSION);
+  } catch (e) {
+    console.error(`opencode-termux: setup failed: ${e.message}`);
+    console.error('Try running the command again, or check your network connection.');
+    process.exit(1);
+  }
+
+  const binPath = path.join(target, 'bin', 'opencode');
+  const args = process.argv.slice(2);
+  const env = { ...process.env, LD_PRELOAD: '', LD_LIBRARY_PATH: GLIBC_LIB_DIR };
+  try {
+    execFileSync(binPath, args, { stdio: 'inherit', env });
+  } catch (e) {
+    process.exit(e.status || 1);
+  }
+}
+
+main();

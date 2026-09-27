@@ -1,0 +1,14 @@
+{
+  "name": "@bash0816/opencode-termux",
+  "version": "0.0.1",
+  "opencodeVersion": "2.0.18",
+  "description": "Termux wrapper for OpenCode CLI (upstream: @opencode/cli-linux-arm64)",
+  "license": "GPL-3.0-only",
+  "bin": {
+    "opencode-termux": "./bin/opencode-termux"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bash0816/OpenCode-Termux.git"
+  }
+}
