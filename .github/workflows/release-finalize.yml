@@ -1,0 +1,102 @@
+name: Release Finalize
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Published version (e.g. 1.0.12)'
+        required: true
+        type: string
+      release_notes:
+        description: 'Release summary (Japanese/English, leave empty for default)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_NOTES_INPUT: ${{ inputs.release_notes }}
+    steps:
+      # RELEASE_ADMIN_PAT secret must be registered in repository settings.
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.RELEASE_ADMIN_PAT }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify npm publish exists
+        run: |
+          set -euo pipefail
+          VER="$RELEASE_VERSION"
+          published=$(npm view "@bash0816/opencode-termux@${VER}" version 2>/dev/null || echo "")
+          if [ "$published" != "$VER" ]; then
+            echo "ERROR: @bash0816/opencode-termux@${VER} not found on npm" >&2
+            exit 1
+          fi
+          echo "Confirmed: @bash0816/opencode-termux@${VER} is published"
+
+      - name: Verify version format
+        run: |
+          set -euo pipefail
+          VER="$RELEASE_VERSION"
+          echo "$VER" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' || {
+            echo "ERROR: version must be X.Y.Z format (create-github-release.yml only accepts this format): $VER" >&2
+            exit 1
+          }
+
+      - name: Update RELEASES.md current marker
+        run: |
+          set -euo pipefail
+          VER="$RELEASE_VERSION"
+          DATE=$(TZ=Asia/Tokyo date +%Y-%m-%d)
+          NOTES="$RELEASE_NOTES_INPUT"
+          if [ -z "$NOTES" ]; then
+            NOTES="OpenCode CLI (@opencode/cli-linux-arm64) v${VER} 対応。Termux 実機検証済み。\nOpenCode CLI v${VER} support. Verified on Termux (Android ARM64)."
+          fi
+
+          # Remove "Current / 現行版" marker from all entries (both legacy \/ and plain / forms)
+          sed -i 's/ ✅ Current \\\/ 現行版/ ✅/g' RELEASES.md
+          sed -i 's/ ✅ Current \/ 現行版/ ✅/g' RELEASES.md
+
+          if grep -qF "## ${VER} — " RELEASES.md; then
+            # Entry exists — just re-add the Current marker
+            sed -i "s/## ${VER} — \(.*\) ✅/## ${VER} — \1 ✅ Current \/ 現行版/" RELEASES.md
+            echo "Updated current marker for existing ${VER} entry"
+          else
+            # New entry
+            ENTRY="## ${VER} — ${DATE} ✅ Current \/ 現行版\n\n${NOTES}\n\n\`\`\`sh\nnpm install -g @bash0816/opencode-termux\n\`\`\`\n\n---\n\n"
+            printf "%b" "${ENTRY}$(cat RELEASES.md)" > /tmp/releases_new.md
+            mv /tmp/releases_new.md RELEASES.md
+            echo "Added new ${VER} entry to RELEASES.md"
+          fi
+
+      - name: Commit updated RELEASES.md
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_ADMIN_PAT }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add RELEASES.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          BRANCH="automation/docs-${RELEASE_VERSION}"
+          git checkout -b "$BRANCH"
+          git commit -m "docs: mark v${RELEASE_VERSION} as current release"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "docs: update RELEASES.md for v${RELEASE_VERSION}" \
+            --body "Automated RELEASES.md update for v${RELEASE_VERSION}." \
+            --base main \
+            --head "$BRANCH"
+          gh pr merge "$BRANCH" --admin --squash --delete-branch

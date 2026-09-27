@@ -1,0 +1,11 @@
+{
+  "version": "2.0.18",
+  "download_url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.0.18.tgz",
+  "sha256_tar": "ddc98e5c789c496dada1ecfae9fe4e0931c7ac43a46da5436b97ecda5cd0ba5d",
+  "integrity": "sha512-OjKG0staG+KRG9sNORb2vIPcfthMVk9RtCamU1vMWPquV70bQEYUM0JUT+t0A49eAc2H4lZWhqkpH2gpg87D+Q==",
+  "patchelf_verified": true,
+  "source_repo": "anomalyco/opencode",
+  "upstream_package": "@opencode/cli-linux-arm64",
+  "detected_date": "2026-09-27",
+  "status": "pending_device_verification"
+}

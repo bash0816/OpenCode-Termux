@@ -1,0 +1,124 @@
+name: OpenCode Version Watch
+
+on:
+  schedule:
+    - cron: '17 7,19 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: opencode-version-watch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  intake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Fetch upstream latest version (@opencode/cli-linux-arm64)
+        id: latest
+        run: |
+          set -eu
+          # Strictly monitor @opencode/cli-linux-arm64. Do not confuse it with
+          # opencode-ai, a separate npm package line (v1).
+          latest=$(npm view @opencode/cli-linux-arm64 version)
+          if [ -z "$latest" ]; then
+            echo "ERROR: Failed to fetch latest version from npm registry" >&2
+            exit 1
+          fi
+          echo "version=$latest" >> "$GITHUB_OUTPUT"
+          echo "Upstream latest: $latest"
+
+      - name: Check current verified version
+        id: verified
+        run: |
+          set -eu
+          verified=$(node -p "require('./config/opencode-verified-versions.json').version")
+          echo "version=$verified" >> "$GITHUB_OUTPUT"
+          echo "Current verified version: $verified"
+
+      - name: Determine mode (skip_uptodate / skip_pending / new_intake)
+        id: mode
+        # Keep untrusted npm version data in env vars, never inline in run scripts.
+        env:
+          LATEST_RAW: ${{ steps.latest.outputs.version }}
+          VERIFIED_RAW: ${{ steps.verified.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          latest="${LATEST_RAW#v}"
+          verified="${VERIFIED_RAW#v}"
+          branch="automation/opencode-${latest}"
+          echo "latest_normalized=$latest" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          pr_count=$(gh pr list --base main --head "$branch" --state open --json number --jq 'length')
+          if [ "$latest" = "$verified" ]; then
+            echo "mode=skip_uptodate" >> "$GITHUB_OUTPUT"
+            echo "Already verified: $latest == $verified"
+          elif [ "$pr_count" -gt 0 ]; then
+            echo "mode=skip_pending" >> "$GITHUB_OUTPUT"
+            echo "Open PR already exists for $latest"
+          else
+            echo "mode=new_intake" >> "$GITHUB_OUTPUT"
+            echo "New version to intake: $latest"
+          fi
+
+      - name: Install patchelf inspection tools
+        if: steps.mode.outputs.mode == 'new_intake'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y patchelf binutils
+
+      - name: Prepare candidate metadata
+        if: steps.mode.outputs.mode == 'new_intake'
+        env:
+          VERSION_RAW: ${{ steps.latest.outputs.version }}
+        run: |
+          set -eu
+          node scripts/prepare-opencode-candidate.js "$VERSION_RAW" > /tmp/candidate.json
+          echo "Candidate metadata:"
+          cat /tmp/candidate.json
+
+      - name: Update candidate config
+        if: steps.mode.outputs.mode == 'new_intake'
+        run: |
+          set -eu
+          node -e 'const fs=require("fs"); const data=JSON.parse(fs.readFileSync(0,"utf8")); fs.writeFileSync("config/opencode-candidate-version.json", JSON.stringify(data,null,2)+"\n")' < /tmp/candidate.json
+          echo "Candidate config updated"
+
+      - name: Commit and push candidate branch
+        if: steps.mode.outputs.mode == 'new_intake'
+        env:
+          LATEST_NORMALIZED: ${{ steps.mode.outputs.latest_normalized }}
+          BRANCH: ${{ steps.mode.outputs.branch }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          version="$LATEST_NORMALIZED"
+          branch="$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch" origin/main
+          git add config/opencode-candidate-version.json
+          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          git commit -m "Track OpenCode ${version} candidate"
+          git push --force-with-lease origin "$branch"
+          {
+            echo "### OpenCode candidate branch pushed"
+            echo ""
+            echo "Branch `$branch` pushed with updated candidate metadata for OpenCode ${version}."
+            echo ""
+            echo "This workflow does not open a pull request (Actions is not granted pull-requests:write in this repo, by design). Open one manually with base `main` and head `$branch`."
+          } >> "$GITHUB_STEP_SUMMARY"

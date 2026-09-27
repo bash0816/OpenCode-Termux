@@ -8,11 +8,7 @@ const { GLIBC_LIB_DIR } = require('../lib/patcher');
 // package.jsonから対象バージョンを読む(このパッケージ自体のversionフィールドを、
 // 「対応するupstream @opencode/cli-linux-arm64のバージョン」として扱う設計)
 const pkg = require('../package.json');
-const TARGET_VERSION = pkg.opencodeVersion || pkg.version; // ★opencodeVersionフィールドが
-                                                             // 無ければpackage.json自体のversionを使う
-                                                             // (フェーズAでは暫定、後続フェーズで
-                                                             // config/opencode-verified-versions.jsonから
-                                                             // 読む形に差し替える可能性がある旨コメントを残す)
+const TARGET_VERSION = pkg.version;
 
 async function main() {
   let target;
