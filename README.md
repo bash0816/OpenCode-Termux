@@ -69,12 +69,48 @@ This package downloads the specific verified upstream version pinned in
 このパッケージは `config/opencode-verified-versions.json` に固定された検証済み
 upstream バージョンをダウンロードします。
 
+## Authentication / 認証
+
+Before using OpenCode, log in to a provider (e.g. the free OpenCode Console account,
+which unlocks a set of free models):
+
+OpenCode を使う前に、プロバイダへログインしてください（例: 無料モデル群が使える
+OpenCode Console アカウント）:
+
+```sh
+opencode auth login opencode
+```
+
+This starts a device-code flow: it prints a one-time code and a URL
+(`https://opencode.ai/console/device?user_code=...`). Open the URL in any browser
+(on this device or another), enter the code if prompted, and complete the login.
+Once connected, run `opencode auth list` to see saved credentials.
+
+これはデバイスコード方式の認証フローです。ワンタイムコードと URL
+(`https://opencode.ai/console/device?user_code=...`) が表示されるので、
+任意の端末のブラウザで URL を開き、必要であればコードを入力してログインを
+完了してください。接続後は `opencode auth list` で保存済みの認証情報を確認できます。
+
+To use a different provider (Anthropic, OpenAI, etc.), see
+`opencode auth login --help` and the
+[OpenCode provider documentation](https://opencode.ai/docs/providers/).
+
+他のプロバイダ（Anthropic・OpenAI 等）を使う場合は `opencode auth login --help` と
+[OpenCode プロバイダ ドキュメント](https://opencode.ai/docs/providers/) を参照してください。
+
 ## Usage / 使い方
 
 ```sh
 opencode [command] [options]
 opencode run "your prompt here"
+opencode run --model opencode/<model-id> "your prompt here"
 ```
+
+Run `opencode models` to list available models (includes several free models via
+OpenCode Console, subject to change).
+
+利用可能なモデル一覧は `opencode models` で確認できます（OpenCode Console 経由の
+無料モデルも複数含まれますが、提供内容は変更される可能性があります）。
 
 For available commands, see the [OpenCode documentation](https://opencode.ai/docs/).
 
