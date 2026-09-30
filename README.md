@@ -7,10 +7,10 @@ Termux 向け OpenCode CLI wrapper package です。
 > **This project is not affiliated with, endorsed by, or sponsored by SST / the OpenCode project.**
 > このプロジェクトは OpenCode プロジェクト（SST）と無関係です。公式から承認・提携・保証されたものではありません。
 
-OpenCode is released under the [MIT License](https://github.com/anomalyco/opencode/blob/main/LICENSE).
+OpenCode is released under the [MIT License](https://github.com/anomalyco/opencode/blob/dev/LICENSE).
 This wrapper simply downloads the official upstream binary and adjusts it to run on Termux/Android; it does not modify OpenCode's own functionality.
 
-OpenCode 本体は [MIT ライセンス](https://github.com/anomalyco/opencode/blob/main/LICENSE) で公開されています。
+OpenCode 本体は [MIT ライセンス](https://github.com/anomalyco/opencode/blob/dev/LICENSE) で公開されています。
 本ラッパーは公式 upstream バイナリをダウンロードし、Termux/Android 上で動作するよう調整するのみで、OpenCode 自体の機能を変更するものではありません。
 
 ## What this does / 仕組み
@@ -34,12 +34,31 @@ Termux/Android using a glibc runtime, instead of Android's default bionic libc.
 - 書き換えの目的は Termux/Android 実行環境への互換性確保のみです。
   認証・ライセンス・課金・アクセス制御・利用制限の回避を意図するものではありません。
 
+## OpenCode 1.x and 2.x / OpenCode の 1系と2系
+
+OpenCode has two separate npm distribution lines: 1.x (`opencode-ai`) and 2.x.
+The official npm package for 2.x is [`@opencode/cli`](https://www.npmjs.com/package/@opencode/cli);
+`@opencode/cli-linux-arm64` is its Linux ARM64 binary package. This package supports
+only the 2.x line (`@opencode/cli-linux-arm64`), not the 1.x line (`opencode-ai`).
+For the official documentation, see [OpenCode 1.x](https://opencode.ai/docs) and
+[OpenCode 2.x](https://opencode.ai/v2/docs).
+
+OpenCode には npm 上で別系統の配布ラインが 2 つあります。1系は `opencode-ai`、
+2系の公式 npm パッケージは [`@opencode/cli`](https://www.npmjs.com/package/@opencode/cli) です。
+`@opencode/cli-linux-arm64` はその Linux ARM64 用バイナリパッケージです。
+本パッケージが対応するのは2系 (`@opencode/cli-linux-arm64`) のみで、1系
+(`opencode-ai`) には対応していません。公式ドキュメントは[1系](https://opencode.ai/docs)、
+[2系](https://opencode.ai/v2/docs)を参照してください。
+
 ## Prerequisites / 前提条件
 
 ```sh
 pkg install glibc-repo && pkg install glibc
 pkg install patchelf
+pkg install llvm
 ```
+
+readelf は llvm パッケージが提供します / readelf is provided by the llvm package
 
 ## Install / インストール
 
@@ -63,40 +82,40 @@ for this device. Subsequent runs reuse the cached, verified installation.
 npm update -g @bash0816/opencode-termux
 ```
 
-This package downloads the specific verified upstream version pinned in
-`config/opencode-verified-versions.json`.
+This package's `package.json` version is the corresponding upstream
+`@opencode/cli-linux-arm64` version, which is fetched from npm.
 
-このパッケージは `config/opencode-verified-versions.json` に固定された検証済み
-upstream バージョンをダウンロードします。
+本パッケージの `package.json` の version が対応する upstream
+`@opencode/cli-linux-arm64` のバージョンであり、そのバージョンを npm から取得します。
 
 ## Authentication / 認証
 
-Before using OpenCode, log in to a provider (e.g. the free OpenCode Console account,
-which unlocks a set of free models):
+Before using OpenCode, log in to a provider. Requirements such as billing information,
+credits, and API keys vary by provider; see the official
+[Console instructions](https://opencode.ai/v2/docs/console/models/):
 
-OpenCode を使う前に、プロバイダへログインしてください（例: 無料モデル群が使える
-OpenCode Console アカウント）:
+OpenCode を使う前に、プロバイダへログインしてください。請求情報・クレジット・APIキー等の
+必要な手順はプロバイダごとに異なるため、公式の
+[Console 手順](https://opencode.ai/v2/docs/console/models/)を参照してください:
 
 ```sh
 opencode auth login opencode
 ```
 
-This starts a device-code flow: it prints a one-time code and a URL
-(`https://opencode.ai/console/device?user_code=...`). Open the URL in any browser
-(on this device or another), enter the code if prompted, and complete the login.
-Once connected, run `opencode auth list` to see saved credentials.
+This starts the login process. Follow the on-screen instructions to complete it.
+Run `opencode auth list` to check saved authentication. For details, see
+`opencode auth login --help`.
 
-これはデバイスコード方式の認証フローです。ワンタイムコードと URL
-(`https://opencode.ai/console/device?user_code=...`) が表示されるので、
-任意の端末のブラウザで URL を開き、必要であればコードを入力してログインを
-完了してください。接続後は `opencode auth list` で保存済みの認証情報を確認できます。
+`opencode auth login opencode` でログインを開始し、画面の案内に従って完了してください。
+保存済み認証は `opencode auth list` で確認できます。詳細は
+`opencode auth login --help` を参照してください。
 
 To use a different provider (Anthropic, OpenAI, etc.), see
 `opencode auth login --help` and the
-[OpenCode provider documentation](https://opencode.ai/docs/providers/).
+[OpenCode provider documentation](https://opencode.ai/v2/docs/providers).
 
 他のプロバイダ（Anthropic・OpenAI 等）を使う場合は `opencode auth login --help` と
-[OpenCode プロバイダ ドキュメント](https://opencode.ai/docs/providers/) を参照してください。
+[OpenCode プロバイダ ドキュメント](https://opencode.ai/v2/docs/providers) を参照してください。
 
 ## Usage / 使い方
 
@@ -106,15 +125,15 @@ opencode run "your prompt here"
 opencode run --model opencode/<model-id> "your prompt here"
 ```
 
-Run `opencode models` to list available models (includes several free models via
-OpenCode Console, subject to change).
+Run `opencode models` to list available models. Availability and requirements vary
+by provider; see the official [Console instructions](https://opencode.ai/v2/docs/console/models/).
 
-利用可能なモデル一覧は `opencode models` で確認できます（OpenCode Console 経由の
-無料モデルも複数含まれますが、提供内容は変更される可能性があります）。
+利用可能なモデル一覧は `opencode models` で確認できます。提供状況や利用条件は
+プロバイダごとに異なるため、公式の[Console 手順](https://opencode.ai/v2/docs/console/models/)を参照してください。
 
-For available commands, see the [OpenCode documentation](https://opencode.ai/docs/).
+For available commands, see the [OpenCode documentation](https://opencode.ai/v2/docs/cli/commands).
 
-利用可能なコマンドは [OpenCode ドキュメント](https://opencode.ai/docs/) を参照してください。
+利用可能なコマンドは [OpenCode ドキュメント](https://opencode.ai/v2/docs/cli/commands) を参照してください。
 
 ## License / ライセンス
 
@@ -169,6 +188,8 @@ functionality.
 
 ## Rollback / ロールバック手順
 
+**(For package maintainers / パッケージ管理者向けの手順です)**
+
 If a critical issue is discovered after promoting a new version to `latest`, you can
 immediately roll back to the previous version using the following command:
 
@@ -179,8 +200,7 @@ immediately roll back to the previous version using the following command:
 npm dist-tag add @bash0816/opencode-termux@<previous known-good version> latest
 ```
 
-This reverts the `latest` tag to a previous known-good version and will restore the
-previous stable release for all new installations and updates.
+This moves the `latest` tag to a previous known-good version. The change applies to
+subsequent new installations and updates.
 
-これにより `latest` タグを前のステーブル版に戻し、新規インストール・更新時に前の
-ステーブル版を配布します。
+これにより `latest` タグが指す版が変わり、以降の新規インストール・更新に反映されます。
