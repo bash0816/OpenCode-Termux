@@ -4,30 +4,40 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { setup } = require('../lib/setup');
 const { GLIBC_LIB_DIR } = require('../lib/patcher');
-
-// package.jsonから対象バージョンを読む(このパッケージ自体のversionフィールドを、
-// 「対応するupstream @opencode/cli-linux-arm64のバージョン」として扱う設計)
+const { route, withAutoUpdateEnv } = require('../lib/argv-route');
+const { runUpdate, uninstallMessage, detectInstallPrefix } = require('../lib/self-update');
+const packageRoot = path.resolve(__dirname, '..');
 const pkg = require('../package.json');
 const TARGET_VERSION = pkg.version;
-
-async function main() {
+async function main(deps = {}) {
+  const args = deps.args || process.argv.slice(2), routed = route(args);
+  const setupFn = deps.setup || setup;
+  const execFn = deps.execFileSync || execFileSync;
+  const output = deps.write || (s => process.stderr.write(s));
+  const exit = deps.exit || (c => process.exit(c));
+  const fs = deps.fs || require('fs');
+  const child = deps.childProcess || require('child_process');
+  if (routed.kind === 'help') { output('Usage: opencode [command] [options]\n管理: opencode update [version] | upgrade [version] | uninstall\n'); exit(0); return; }
+  if (routed.kind === 'update') {
+    await (deps.runUpdate || runUpdate)(routed.rest, { fs, currentVersion: pkg.version,
+      spawnSync: deps.spawnSync || child.spawnSync, registryGet: deps.registryGet, packageRoot: deps.packageRoot || packageRoot, libPath: deps.libPath || path.resolve(__dirname, '..', 'lib'),
+      write: output, exit }); return;
+  }
+  if (routed.kind === 'uninstall') {
+    let prefix = null;
+    try { prefix = detectInstallPrefix(fs, deps.packageRoot || packageRoot, deps.libPath || path.resolve(__dirname, '..', 'lib')); } catch (_) {}
+    output(uninstallMessage(prefix)); exit(1); return;
+  }
+  if (routed.kind === 'refuse') {
+    output('判定できない形式です。flag を外して再実行してください。\nUnable to determine this command form. Remove the flags and try again.\n'); exit(2); return;
+  }
   let target;
-  try {
-    target = await setup(TARGET_VERSION);
-  } catch (e) {
-    console.error(`opencode-termux: setup failed: ${e.message}`);
-    console.error('Try running the command again, or check your network connection.');
-    process.exit(1);
-  }
-
+  try { target = await setupFn(TARGET_VERSION); }
+  catch (e) { output(`opencode-termux: setup failed: ${e.message}\nTry running the command again, or check your network connection.\n`); exit(1); return; }
   const binPath = path.join(target, 'bin', 'opencode');
-  const args = process.argv.slice(2);
-  const env = { ...process.env, LD_PRELOAD: '', LD_LIBRARY_PATH: GLIBC_LIB_DIR };
-  try {
-    execFileSync(binPath, args, { stdio: 'inherit', env });
-  } catch (e) {
-    process.exit(e.status || 1);
-  }
+  const env = withAutoUpdateEnv({ ...(deps.env || process.env), LD_PRELOAD: '', LD_LIBRARY_PATH: deps.glibcLibDir || GLIBC_LIB_DIR });
+  try { execFn(binPath, args, { stdio: 'inherit', env }); }
+  catch (e) { exit(e.status || 1); }
 }
-
-main();
+if (require.main === module) main();
+module.exports = { main };

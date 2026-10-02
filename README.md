@@ -8,10 +8,10 @@ Termux 向け OpenCode CLI wrapper package です。
 > このプロジェクトは OpenCode プロジェクト（SST）と無関係です。公式から承認・提携・保証されたものではありません。
 
 OpenCode is released under the [MIT License](https://github.com/anomalyco/opencode/blob/dev/LICENSE).
-This wrapper simply downloads the official upstream binary and adjusts it to run on Termux/Android; it does not modify OpenCode's own functionality.
+This wrapper simply downloads the official upstream binary and adjusts it to run on Termux/Android; the wrapper handles `update`, `upgrade`, `uninstall`, and leading help when paired with `update` or `upgrade`; other OpenCode commands, including standalone help requests, go to upstream.
 
 OpenCode 本体は [MIT ライセンス](https://github.com/anomalyco/opencode/blob/dev/LICENSE) で公開されています。
-本ラッパーは公式 upstream バイナリをダウンロードし、Termux/Android 上で動作するよう調整するのみで、OpenCode 自体の機能を変更するものではありません。
+本ラッパーは公式 upstream バイナリをダウンロードし、Termux/Android 上で動作するよう調整します。管理コマンド `update`・`upgrade`・`uninstall` と、`update`／`upgrade` に先行する help はラッパーが処理します。単独の help や `--help models` を含むその他のコマンドは upstream に渡します。
 
 ## What this does / 仕組み
 
@@ -78,15 +78,64 @@ for this device. Subsequent runs reuse the cached, verified installation.
 
 ## Update / 更新
 
+OpenCode 2.0.20 以降では `opencode update` と `opencode upgrade` がこの npm wrapper 自体を更新します。更新先は npm の `latest` です。明示した version への更新は `opencode update 2.0.20` のように指定できます。更新後の OpenCode バイナリは次回起動時に取得されます。wrapper の npm prefix を検出できない場合は更新を中止し、prefix を指定した npm コマンドを案内します。
+
+利用者が自動更新環境変数を設定していない場合、通常の起動時自動更新チェックを停止します。これは OpenCode のすべての更新経路を無効にする説明ではありません。
+
+2.0.18 / 2.0.19 を使用中の場合、`opencode update` は利用できません。次のコマンドで wrapper を更新してください:
+
 ```sh
-npm update -g @bash0816/opencode-termux
+npm install -g @bash0816/opencode-termux@latest
 ```
 
-This package's `package.json` version is the corresponding upstream
-`@opencode/cli-linux-arm64` version, which is fetched from npm.
+npm 更新に成功した後、次回起動で setup に失敗した場合は、同じ prefix を指定して以前の wrapper version を再インストールしてください:
 
-本パッケージの `package.json` の version が対応する upstream
-`@opencode/cli-linux-arm64` のバージョンであり、そのバージョンを npm から取得します。
+```sh
+npm install -g --prefix <prefix> @bash0816/opencode-termux@<previous-version>
+```
+
+`package.json` の version は対応する upstream `@opencode/cli-linux-arm64` の version です。
+
+OpenCode 2.0.20 and later route `opencode update` and `opencode upgrade` to update this npm wrapper to the registry's `latest` version. To request a specific version, use `opencode update 2.0.20`. The new OpenCode binary is fetched on the next launch. If the wrapper's npm prefix cannot be detected, the update stops and prints an npm command with an explicit prefix.
+
+When the user has not set `OPENCODE_DISABLE_AUTOUPDATE`, the wrapper disables the normal startup update check. This does not describe every possible update path as disabled.
+
+Users on 2.0.18 / 2.0.19 cannot use `opencode update`; update the wrapper directly:
+
+```sh
+npm install -g @bash0816/opencode-termux@latest
+```
+
+If setup fails on the next launch after npm successfully updates the wrapper, reinstall the previous wrapper version using the same prefix:
+
+```sh
+npm install -g --prefix <prefix> @bash0816/opencode-termux@<previous-version>
+```
+
+実体配置は標準 npm 配置である必要があります。package または `lib/` の実体配置が標準配置と不整合な構成には対応していません。標準配置にある package への symlink は利用できます。
+
+The package must resolve to the standard npm layout, and its `lib/` realpath must match that layout. Nonstandard real locations or inconsistent package and library realpaths are unsupported. A symlink to a package in the standard layout is supported.
+
+The `package.json` version is the corresponding upstream `@opencode/cli-linux-arm64` version.
+
+## Uninstall / アンインストール
+
+`opencode uninstall` は OpenCode のデータ・設定・認証・セッション・cache・state を削除する可能性があるため実行せず、案内を表示して終了します。wrapper を削除するには次を実行し、キャッシュ `~/.opencode-termux` も削除してください。prefix を特定できない場合は、インストール時の prefix を `<prefix>` に指定してください。
+
+```sh
+npm uninstall -g --prefix <prefix> @bash0816/opencode-termux
+```
+
+OpenCode 自身の設定・認証・セッションデータはこの手順では削除されません。保存先は `opencode debug paths` で確認できます。
+
+`opencode uninstall` is not run because it may delete OpenCode data, settings, authentication, sessions, cache, and state. The wrapper prints removal instructions and exits. Remove this wrapper and its cache with:
+
+```sh
+npm uninstall -g --prefix <prefix> @bash0816/opencode-termux
+rm -rf ~/.opencode-termux
+```
+
+Use the prefix from installation. OpenCode settings, authentication, and session data are retained; their locations are shown by `opencode debug paths`.
 
 ## Authentication / 認証
 

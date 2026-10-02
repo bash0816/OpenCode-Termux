@@ -8,6 +8,7 @@ on:
       - 'config/**'
       - '!config/opencode-candidate-version.json'
       - 'scripts/**'
+      - 'test/**'
       - 'package.json'
       - 'README.md'
       - 'NOTICE.md'
@@ -21,6 +22,7 @@ on:
       - 'config/**'
       - '!config/opencode-candidate-version.json'
       - 'scripts/**'
+      - 'test/**'
       - 'package.json'
       - 'README.md'
       - 'NOTICE.md'
@@ -63,8 +65,11 @@ jobs:
           node --check lib/patcher.js
           node --check lib/setup.js
           node --check lib/version-utils.js
+          node --check lib/argv-route.js
+          node --check lib/self-update.js
           node --check scripts/prepare-opencode-candidate.js
           node --check scripts/promote-opencode-candidate.js
+          node --test test/*.test.js
 
       - name: Publish preflight check
         run: |
