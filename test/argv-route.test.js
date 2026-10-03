@@ -13,7 +13,7 @@ test('only a first-position management command is routed to the wrapper', () => 
   for (const args of [[], ['--help'], ['--version', 'update'], ['--version=true', 'update'],
     ['--version=false', 'update'], ['--completions', 'bash', 'upgrade'],
     ['--completions=bash', 'upgrade'], ['--no-print-logs', 'plugin', 'update', '--help'],
-    ['--no-print-logs=true', 'update'], ['--print-logs', 'plugin', 'update'],
+    ['--no-print-logs=true', 'update'], ['--no-print-logs=false', 'update'], ['--print-logs', 'plugin', 'update'],
     ['--print-logs', 'run', 'uninstall'], ['run', 'update', 'the docs'], ['--', 'update']]) {
     assert.deepEqual(route(args), { kind: 'passthrough', rest: [] }, args.join(' '));
   }

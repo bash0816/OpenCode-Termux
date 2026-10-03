@@ -87,7 +87,9 @@ for this device. Subsequent runs reuse the cached, verified installation.
 
 ## Update / 更新
 
-OpenCode 2.0.20 以降では `opencode update` と `opencode upgrade` がこの npm wrapper 自体を更新します。更新先は npm の `latest` です。明示した version への更新は `opencode update 2.0.20` のように指定できます。更新後の OpenCode バイナリは次回起動時に取得されます。wrapper の npm prefix を検出できない場合は更新を中止し、prefix を指定した npm コマンドを案内します。
+OpenCode 2.0.22 以降では `opencode update` と `opencode upgrade` がこの npm wrapper 自体を更新します。更新先は npm の `latest` です。明示した version への更新は `opencode update 2.0.22` のように指定できます。更新後の OpenCode バイナリは次回起動時に取得されます。wrapper の npm prefix を検出できない場合は更新を中止し、prefix を指定した npm コマンドを案内します。
+
+TUI 内の `/update`（更新ダイアログの Update）は Termux では使えません。「Installation method not found」と表示され、更新は実行されません。シェルで `opencode update` を実行してください。
 
 利用者が自動更新環境変数を設定していない場合、通常の起動時自動更新チェックを停止します。これは OpenCode のすべての更新経路を無効にする説明ではありません。
 
@@ -105,7 +107,9 @@ npm install -g --prefix <prefix> @bash0816/opencode-termux@<previous-version>
 
 `package.json` の version は対応する upstream `@opencode/cli-linux-arm64` の version です。
 
-OpenCode 2.0.20 and later route `opencode update` and `opencode upgrade` to update this npm wrapper to the registry's `latest` version. To request a specific version, use `opencode update 2.0.20`. The new OpenCode binary is fetched on the next launch. If the wrapper's npm prefix cannot be detected, the update stops and prints an npm command with an explicit prefix.
+OpenCode 2.0.22 and later route `opencode update` and `opencode upgrade` to update this npm wrapper to the registry's `latest` version. To request a specific version, use `opencode update 2.0.22`. The new OpenCode binary is fetched on the next launch. If the wrapper's npm prefix cannot be detected, the update stops and prints an npm command with an explicit prefix.
+
+The TUI `/update` command (Update in the update dialog) is unavailable on Termux. It displays “Installation method not found” and does not perform an update. Run `opencode update` in the shell instead.
 
 When the user has not set `OPENCODE_DISABLE_AUTOUPDATE`, the wrapper disables the normal startup update check. This does not describe every possible update path as disabled.
 

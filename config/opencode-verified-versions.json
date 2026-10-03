@@ -1,12 +1,12 @@
 {
-  "version": "2.0.20",
-  "download_url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.0.20.tgz",
-  "sha256_tar": "c5837704e4d1c576650d900554f107275aeee0acea1049e5df3ba21844e23a96",
-  "integrity": "sha512-JLHDgEPmThZjbQEIwZNBdwLddvxYFIssDaDbDb/nF7aw4D5xt9xGUa1o6nF1IW1Ck+px8kV465W2AuThKRU3sg==",
+  "version": "2.0.22",
+  "download_url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.0.22.tgz",
+  "sha256_tar": "49e5466de60f65001cddd7583419f842140697daead2b4d8826be54d9056e70b",
+  "integrity": "sha512-t/yuu9Dqd/M44dFH95bphu7ikO6FATMQuVk/91QBnCMzsP8zVrXU7zAxD1wVLpYYUDqIonEmi80XETlFqx7chw==",
   "patchelf_verified": true,
   "source_repo": "anomalyco/opencode",
   "upstream_package": "@opencode/cli-linux-arm64",
-  "verified_date": "2026-10-01",
+  "verified_date": "2026-10-03",
   "release_state": "stable",
-  "notes": "Promoted via promote-opencode-candidate.js --confirm-device-verified on 2026-10-01. Patchelf interpreter static check recorded as verified. Device/functional verification confirmed by the operator invoking this script with --confirm-device-verified."
+  "notes": "Promoted via promote-opencode-candidate.js --confirm-device-verified on 2026-10-03. Patchelf interpreter static check recorded as verified. Device/functional verification confirmed by the operator invoking this script with --confirm-device-verified."
 }
