@@ -14,13 +14,17 @@ OpenCode 本体は [MIT ライセンス](https://github.com/anomalyco/opencode/b
 本ラッパーは公式 upstream バイナリをダウンロードし、Termux/Android 上で動作するよう調整します。argv[0] が `update`・`upgrade`・`uninstall` の場合だけラッパーが処理します。flag が先頭にある場合を含むその他の argv は変更せず upstream に渡します。
 
 > **Notice: updating from 2.0.18 / 2.0.19 / 更新に関するお知らせ**
-> Versions 2.0.18 and 2.0.19 have a bug in OpenCode's built-in update command. Please update with npm instead:
-> `npm update -g @bash0816/opencode-termux`
-> This is planned to be fixed in the next release. Releases have been slower than usual; thank you for your patience.
+> Versions 2.0.18 and 2.0.19 have a bug in OpenCode's built-in update command (`opencode update`). This is fixed in 2.0.22. If you are on 2.0.18 or 2.0.19, update with npm:
+> `npm install -g @bash0816/opencode-termux@latest`
+> If you installed with a custom prefix, add the same `--prefix <prefix>` you used at install time. If something goes wrong after updating, reinstall a specific version (this reinstalls the package; it is not a guaranteed fix for every problem):
+> `npm install -g @bash0816/opencode-termux@2.0.22`
+> (or `@2.0.19` to go back; note that 2.0.19 still has the update bug, so keep updating with npm there). From 2.0.22 on, `opencode update` works. Releases were slower than usual; thank you for your patience.
 >
-> 2.0.18 と 2.0.19 には、OpenCode 組み込みのアップデート機能に不具合があります。更新は npm で行ってください:
-> `npm update -g @bash0816/opencode-termux`
-> 次回のリリースで修正予定です。リリースが通常より遅れており、ご迷惑をおかけしています。
+> 2.0.18 と 2.0.19 には、OpenCode 組み込みのアップデート機能（`opencode update`）に不具合があります。2.0.22 で修正されました。2.0.18 / 2.0.19 を使用中の場合は npm で更新してください:
+> `npm install -g @bash0816/opencode-termux@latest`
+> 独自の prefix にインストールしている場合は、インストール時と同じ `--prefix <prefix>` を付けてください。更新後に不具合が出た場合は、バージョンを指定して入れ直してください（パッケージの再インストールであり、あらゆる不具合の復旧を保証するものではありません）:
+> `npm install -g @bash0816/opencode-termux@2.0.22`
+> （元に戻す場合は `@2.0.19`。2.0.19 では更新の不具合が残るため、更新は引き続き npm で行ってください）。2.0.22 以降は `opencode update` が使えます。リリースが通常より遅れ、ご迷惑をおかけしました。
 
 ## What this does / 仕組み
 
