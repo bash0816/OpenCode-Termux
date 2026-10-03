@@ -8,10 +8,10 @@ Termux 向け OpenCode CLI wrapper package です。
 > このプロジェクトは OpenCode プロジェクト（SST）と無関係です。公式から承認・提携・保証されたものではありません。
 
 OpenCode is released under the [MIT License](https://github.com/anomalyco/opencode/blob/dev/LICENSE).
-This wrapper simply downloads the official upstream binary and adjusts it to run on Termux/Android; the wrapper handles `update`, `upgrade`, `uninstall`, and leading help when paired with `update` or `upgrade`; other OpenCode commands, including standalone help requests, go to upstream.
+This wrapper downloads the official upstream binary and adjusts it to run on Termux/Android. It handles `update`, `upgrade`, and `uninstall` only when one of those is the first argument; all other argv, including flags before a management word, go unchanged to upstream.
 
 OpenCode 本体は [MIT ライセンス](https://github.com/anomalyco/opencode/blob/dev/LICENSE) で公開されています。
-本ラッパーは公式 upstream バイナリをダウンロードし、Termux/Android 上で動作するよう調整します。管理コマンド `update`・`upgrade`・`uninstall` と、`update`／`upgrade` に先行する help はラッパーが処理します。単独の help や `--help models` を含むその他のコマンドは upstream に渡します。
+本ラッパーは公式 upstream バイナリをダウンロードし、Termux/Android 上で動作するよう調整します。argv[0] が `update`・`upgrade`・`uninstall` の場合だけラッパーが処理します。flag が先頭にある場合を含むその他の argv は変更せず upstream に渡します。
 
 ## What this does / 仕組み
 
@@ -126,7 +126,7 @@ The `package.json` version is the corresponding upstream `@opencode/cli-linux-ar
 npm uninstall -g --prefix <prefix> @bash0816/opencode-termux
 ```
 
-OpenCode 自身の設定・認証・セッションデータはこの手順では削除されません。保存先は `opencode debug paths` で確認できます。
+OpenCode 自身の設定・認証・セッションデータはこの手順では削除されません。保存先は削除前に `opencode debug paths` で確認してください。
 
 `opencode uninstall` is not run because it may delete OpenCode data, settings, authentication, sessions, cache, and state. The wrapper prints removal instructions and exits. Remove this wrapper and its cache with:
 
@@ -135,7 +135,7 @@ npm uninstall -g --prefix <prefix> @bash0816/opencode-termux
 rm -rf ~/.opencode-termux
 ```
 
-Use the prefix from installation. OpenCode settings, authentication, and session data are retained; their locations are shown by `opencode debug paths`.
+Use the prefix from installation. Before removing the wrapper, check OpenCode data locations with `opencode debug paths`.
 
 ## Authentication / 認証
 
