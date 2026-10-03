@@ -13,6 +13,15 @@ This wrapper simply downloads the official upstream binary and adjusts it to run
 OpenCode 本体は [MIT ライセンス](https://github.com/anomalyco/opencode/blob/dev/LICENSE) で公開されています。
 本ラッパーは公式 upstream バイナリをダウンロードし、Termux/Android 上で動作するよう調整するのみで、OpenCode 自体の機能を変更するものではありません。
 
+> **Notice: updating from 2.0.18 / 2.0.19 / 更新に関するお知らせ**
+> Versions 2.0.18 and 2.0.19 have a bug in OpenCode's built-in update command. Please update with npm instead:
+> `npm update -g @bash0816/opencode-termux`
+> This is planned to be fixed in the next release. Releases have been slower than usual; thank you for your patience.
+>
+> 2.0.18 と 2.0.19 には、OpenCode 組み込みのアップデート機能に不具合があります。更新は npm で行ってください:
+> `npm update -g @bash0816/opencode-termux`
+> 次回のリリースで修正予定です。リリースが通常より遅れており、ご迷惑をおかけしています。
+
 ## What this does / 仕組み
 
 This package downloads the official OpenCode CLI binary from npm
