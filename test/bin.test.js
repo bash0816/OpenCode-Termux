@@ -47,7 +47,7 @@ test('child process refuses bad layouts without attempting network or npm',()=>{
  }finally{fs.rmSync(root,{recursive:true,force:true});}});
 
 test('all non-leading management words pass unchanged to upstream',async()=>{
- for(const args of [[],['--help'],['-h'],['--version','update'],['--version=true','update'],['--version=false','update'],['--completions','bash','upgrade'],['--completions=bash','upgrade'],['--no-print-logs','plugin','update','--help'],['--no-print-logs=true','update'],['--print-logs','plugin','update'],['--print-logs','run','uninstall'],['run','update','the docs']]){
+ for(const args of [[],['--help'],['-h'],['--version','update'],['--version=true','update'],['--version=false','update'],['--completions','bash','upgrade'],['--completions=bash','upgrade'],['--no-print-logs','plugin','update','--help'],['--no-print-logs=true','update'],['--no-print-logs=false','update'],['--print-logs','plugin','update'],['--print-logs','run','uninstall'],['run','update','the docs']]){
   const {state}=await invoke(args);assert.deepEqual([state.setup,state.upstream,state.registry,state.npm],[1,1,0,0],args.join(' '));assert.deepEqual(state.argv,args,args.join(' '));
  }
 });
