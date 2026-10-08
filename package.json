@@ -1,6 +1,6 @@
 {
   "name": "@bash0816/opencode-termux",
-  "version": "2.0.22",
+  "version": "2.0.23",
   "description": "Termux wrapper for OpenCode CLI (upstream: @opencode/cli-linux-arm64)",
   "license": "GPL-3.0-only",
   "bin": {
