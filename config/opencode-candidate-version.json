@@ -1,11 +1,11 @@
 {
-  "version": "2.1.1",
-  "download_url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.1.1.tgz",
-  "sha256_tar": "cfa3ae6363fc3082f03072297069d81f53559a761371fdb4b56fe6bfa01ca066",
-  "integrity": "sha512-+v8jCh1HT6iH2uCIYTTaYv+xqE1aEWM0XOjnsi2/1jz6GringoxBTz1lmfUmPY+R570LSyEjc9LVW6DBrHbAyQ==",
+  "version": "2.1.2",
+  "download_url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.1.2.tgz",
+  "sha256_tar": "d54e3a96d9e32b6ff127836925ed9a393254d0e71e0df7eb8cca2aa962c9bdf1",
+  "integrity": "sha512-294IA9S1sXOAzOBRPMcnFuYpXlFeUaKTlpTk0a7TMvuc7cJbfS52poTw3AlIu7ycbn8TGmTmj27OOxsMmBCLEg==",
   "patchelf_verified": true,
   "source_repo": "anomalyco/opencode",
   "upstream_package": "@opencode/cli-linux-arm64",
-  "detected_date": "2026-10-21",
+  "detected_date": "2026-10-22",
   "status": "pending_device_verification"
 }
