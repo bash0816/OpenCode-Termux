@@ -66,12 +66,38 @@ OpenCode には npm 上で別系統の配布ラインが 2 つあります。1�
 ## Prerequisites / 前提条件
 
 ```sh
+pkg update && pkg upgrade
 pkg install glibc-repo && pkg install glibc
-pkg install patchelf
+pkg install patchelf libc++
 pkg install llvm
 ```
 
 readelf は llvm パッケージが提供します / readelf is provided by the llvm package
+
+### If setup fails with `cannot locate symbol "_ZNSt6__ndk1..."` / セットアップが `cannot locate symbol` で失敗する場合
+
+On first run, `opencode` may stop with an error like this:
+
+```
+opencode-termux: setup failed: Command failed: patchelf --set-interpreter ...
+CANNOT LINK EXECUTABLE "patchelf": cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm" ...
+```
+
+This happens when the installed `libc++` package is older than the version your `patchelf` needs. Update `libc++`, then run `opencode` again:
+
+```sh
+pkg install libc++
+```
+
+If `pkg` does not offer a newer version, switch to a current mirror with `termux-change-repo`, then run `pkg update && pkg upgrade`.
+
+初回起動で上記のようなエラーが出る場合は、インストール済みの `libc++` が `patchelf` の必要とするバージョンより古いことが原因です。`libc++` を更新してから、もう一度 `opencode` を実行してください。
+
+```sh
+pkg install libc++
+```
+
+`pkg` が新しいバージョンを見つけられない場合は、`termux-change-repo` で最新のミラーに切り替え、`pkg update && pkg upgrade` を実行してください。
 
 ## Install / インストール
 
