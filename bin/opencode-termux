@@ -4,6 +4,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { setup } = require('../lib/setup');
 const { GLIBC_LIB_DIR } = require('../lib/patcher');
+const { PrereqError } = require('../lib/preflight');
 const { route, withAutoUpdateEnv } = require('../lib/argv-route');
 const { runUpdate, uninstallMessage, detectInstallPrefix } = require('../lib/self-update');
 const packageRoot = path.resolve(__dirname, '..');
@@ -29,7 +30,7 @@ async function main(deps = {}) {
   }
   let target;
   try { target = await setupFn(TARGET_VERSION); }
-  catch (e) { output(`opencode-termux: setup failed: ${e.message}\nTry running the command again, or check your network connection.\n`); exit(1); return; }
+  catch (e) { if (e instanceof PrereqError) { output(e.userMessage.endsWith('\n') ? e.userMessage : e.userMessage + '\n'); exit(e.exitCode); return; } output(`opencode-termux: setup failed: ${e.message}\nTry running the command again, or check your network connection.\n`); exit(1); return; }
   const binPath = path.join(target, 'bin', 'opencode');
   const env = withAutoUpdateEnv({ ...(deps.env || process.env), LD_PRELOAD: '', LD_LIBRARY_PATH: deps.glibcLibDir || GLIBC_LIB_DIR });
   try { execFn(binPath, args, { stdio: 'inherit', env }); }
