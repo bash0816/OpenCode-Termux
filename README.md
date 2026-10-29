@@ -4,6 +4,12 @@
 
 Termux 向け OpenCode CLI wrapper package です。
 
+> **Notice / お知らせ**
+>
+> If the first run fails with `cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm"`, run `pkg install libc++` and try again ([details](#if-setup-fails-with-cannot-locate-symbol-_znst6__ndk1--セットアップが-cannot-locate-symbol-で失敗する場合)). A future release will check this automatically before downloading.
+>
+> 初回起動が `cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm"` で失敗する場合は、`pkg install libc++` を実行して、もう一度お試しください（[詳細](#if-setup-fails-with-cannot-locate-symbol-_znst6__ndk1--セットアップが-cannot-locate-symbol-で失敗する場合)）。次回のリリースで、ダウンロード前にこの確認を自動で行う予定です。
+
 > **This project is not affiliated with, endorsed by, or sponsored by SST / the OpenCode project.**
 > このプロジェクトは OpenCode プロジェクト（SST）と無関係です。公式から承認・提携・保証されたものではありません。
 
