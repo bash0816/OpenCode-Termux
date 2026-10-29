@@ -90,7 +90,7 @@ opencode-termux: setup failed: Command failed: patchelf --set-interpreter ...
 CANNOT LINK EXECUTABLE "patchelf": cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm" ...
 ```
 
-This error occurs when the installed `libc++` is older than the version your `patchelf` needs. Update `libc++`, then run `opencode` again:
+This error can occur when the installed `libc++` is older than the version your `patchelf` needs. Update `libc++`, then run `opencode` again:
 
 ```sh
 pkg install libc++
@@ -98,7 +98,7 @@ pkg install libc++
 
 If `pkg` does not offer a newer version, switch to a current mirror with `termux-change-repo`, then run `pkg update && pkg upgrade` (this updates all installed packages, not only OpenCode's prerequisites).
 
-初回起動で上記のようなエラーが出る場合は、インストール済みの `libc++` が `patchelf` の必要とするバージョンより古いことが原因です。`libc++` を更新してから、もう一度 `opencode` を実行してください。
+初回起動で上記のようなエラーが出る場合は、インストール済みの `libc++` が `patchelf` の必要とするバージョンより古いことが原因の場合があります。`libc++` を更新してから、もう一度 `opencode` を実行してください。
 
 ```sh
 pkg install libc++
