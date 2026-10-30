@@ -6,9 +6,19 @@ Termux 向け OpenCode CLI wrapper package です。
 
 > **Notice / お知らせ**
 >
-> If the first run fails with `cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm"`, run `pkg install libc++` and try again ([details](#if-setup-fails-with-cannot-locate-symbol-_znst6__ndk1--セットアップが-cannot-locate-symbol-で失敗する場合)). A future release will check this automatically before downloading.
+> **Please update to 2.2.2.** It fixes the first-run failure `cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm"` (an outdated `libc++` that `patchelf` cannot start with). Before downloading anything, opencode-termux now checks that the glibc loader, `patchelf` and `readelf` can run, explains what is missing, and offers the matching `pkg install` after you confirm.
 >
-> 初回起動が `cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm"` で失敗する場合は、`pkg install libc++` を実行して、もう一度お試しください（[詳細](#if-setup-fails-with-cannot-locate-symbol-_znst6__ndk1--セットアップが-cannot-locate-symbol-で失敗する場合)）。次回のリリースで、ダウンロード前にこの確認を自動で行う予定です。
+> 1. Update the wrapper: `npm install -g @bash0816/opencode-termux@latest`
+> 2. Install anything that is missing (see [Prerequisites](#prerequisites--前提条件)): `pkg install patchelf libc++ llvm`, and `pkg install glibc-repo && pkg install glibc` if the glibc loader is missing.
+>
+> If you are still on 2.2.0 or earlier and see this error, run `pkg install libc++` and try again ([details](#if-setup-fails-with-cannot-locate-symbol-_znst6__ndk1--セットアップが-cannot-locate-symbol-で失敗する場合)).
+>
+> **2.2.2 への更新をお願いします。** 初回起動の失敗 `cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm"`（`libc++` が古く、`patchelf` が起動できない）が修正されています。ダウンロードの前に、glibc のローダー、`patchelf`、`readelf` が実行できるかを確認し、足りないものを説明して、確認のうえで該当の `pkg install` を実行します。
+>
+> 1. ラッパーを更新: `npm install -g @bash0816/opencode-termux@latest`
+> 2. 足りないものを入れる（[前提条件](#prerequisites--前提条件) を参照）: `pkg install patchelf libc++ llvm`。glibc のローダーが無い場合は `pkg install glibc-repo && pkg install glibc` も実行してください。
+>
+> 2.2.0 以前のままでこのエラーが出る場合は、`pkg install libc++` を実行してから、もう一度お試しください（[詳細](#if-setup-fails-with-cannot-locate-symbol-_znst6__ndk1--セットアップが-cannot-locate-symbol-で失敗する場合)）。
 
 > **This project is not affiliated with, endorsed by, or sponsored by SST / the OpenCode project.**
 > このプロジェクトは OpenCode プロジェクト（SST）と無関係です。公式から承認・提携・保証されたものではありません。
@@ -18,19 +28,6 @@ This wrapper downloads the official upstream binary and adjusts it to run on Ter
 
 OpenCode 本体は [MIT ライセンス](https://github.com/anomalyco/opencode/blob/dev/LICENSE) で公開されています。
 本ラッパーは公式 upstream バイナリをダウンロードし、Termux/Android 上で動作するよう調整します。argv[0] が `update`・`upgrade`・`uninstall` の場合だけラッパーが処理します。flag が先頭にある場合を含むその他の argv は変更せず upstream に渡します。
-
-> **Notice: updating from 2.0.18 / 2.0.19 / 更新に関するお知らせ**
-> Versions 2.0.18 and 2.0.19 have a bug in OpenCode's built-in update command (`opencode update`). This is fixed in 2.0.22. If you are on 2.0.18 or 2.0.19, update with npm:
-> `npm install -g @bash0816/opencode-termux@latest`
-> If you installed with a custom prefix, add the same `--prefix <prefix>` you used at install time. If something goes wrong after updating, reinstall a specific version (this reinstalls the package; it is not a guaranteed fix for every problem):
-> `npm install -g @bash0816/opencode-termux@2.0.22`
-> (or `@2.0.19` to go back; note that 2.0.19 still has the update bug, so keep updating with npm there). From 2.0.22 on, `opencode update` works. Releases were slower than usual; thank you for your patience.
->
-> 2.0.18 と 2.0.19 には、OpenCode 組み込みのアップデート機能（`opencode update`）に不具合があります。2.0.22 で修正されました。2.0.18 / 2.0.19 を使用中の場合は npm で更新してください:
-> `npm install -g @bash0816/opencode-termux@latest`
-> 独自の prefix にインストールしている場合は、インストール時と同じ `--prefix <prefix>` を付けてください。更新後に不具合が出た場合は、バージョンを指定して入れ直してください（パッケージの再インストールであり、あらゆる不具合の復旧を保証するものではありません）:
-> `npm install -g @bash0816/opencode-termux@2.0.22`
-> （元に戻す場合は `@2.0.19`。2.0.19 では更新の不具合が残るため、更新は引き続き npm で行ってください）。2.0.22 以降は `opencode update` が使えます。リリースが通常より遅れ、ご迷惑をおかけしました。
 
 ## What this does / 仕組み
 
@@ -130,12 +127,6 @@ TUI 内の `/update`（更新ダイアログの Update）は Termux では使え
 
 利用者が自動更新環境変数を設定していない場合、通常の起動時自動更新チェックを停止します。これは OpenCode のすべての更新経路を無効にする説明ではありません。
 
-2.0.18 / 2.0.19 を使用中の場合、`opencode update` は利用できません。次のコマンドで wrapper を更新してください:
-
-```sh
-npm install -g @bash0816/opencode-termux@latest
-```
-
 npm 更新に成功した後、次回起動で setup に失敗した場合は、同じ prefix を指定して以前の wrapper version を再インストールしてください:
 
 ```sh
@@ -149,12 +140,6 @@ OpenCode 2.0.22 and later route `opencode update` and `opencode upgrade` to upda
 The TUI `/update` command (Update in the update dialog) is unavailable on Termux. It displays “Installation method not found” and does not perform an update. Run `opencode update` in the shell instead.
 
 When the user has not set `OPENCODE_DISABLE_AUTOUPDATE`, the wrapper disables the normal startup update check. This does not describe every possible update path as disabled.
-
-Users on 2.0.18 / 2.0.19 cannot use `opencode update`; update the wrapper directly:
-
-```sh
-npm install -g @bash0816/opencode-termux@latest
-```
 
 If setup fails on the next launch after npm successfully updates the wrapper, reinstall the previous wrapper version using the same prefix:
 
