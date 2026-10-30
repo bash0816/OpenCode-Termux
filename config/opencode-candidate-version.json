@@ -1,8 +1,8 @@
 {
-  "version": "2.2.2",
-  "download_url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.2.2.tgz",
-  "sha256_tar": "d573e9efcd7d340103cfb5d136b54e2951e75169b1865da99a18a7da0211cb99",
-  "integrity": "sha512-cyp6l1SLFGV7NxXd5FgBIJT8V5mQhBjs+F9vh4pRSam9kRGmv/nUEvgPMXKfNrZdsllTlLoPvzgHWzQZz2ff1A==",
+  "version": "2.2.3",
+  "download_url": "https://registry.npmjs.org/@opencode/cli-linux-arm64/-/cli-linux-arm64-2.2.3.tgz",
+  "sha256_tar": "c83e14de3994ee4c4bf6826b48b6e774e51727e8629e2b60047a1c9d0e3278d6",
+  "integrity": "sha512-jP8Y7RvvnQGEz9NcsuPNdsQIcD5QsoRozXWOrG2EIG7Y8BiYQUHfvX4b0eW6kN9pC7nxLsJC+PpeUr03tXIcPA==",
   "patchelf_verified": true,
   "source_repo": "anomalyco/opencode",
   "upstream_package": "@opencode/cli-linux-arm64",
