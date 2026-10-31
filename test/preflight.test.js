@@ -32,7 +32,7 @@ test('GLIBC_LD_PATH matches the value used by patcher', () => {
 });
 
 // PROBLEMS の固定値
-test('PROBLEMS has exactly the 8 problem codes', () => {
+test('PROBLEMS has exactly the 10 problem codes', () => {
   assert.deepEqual(Object.keys(PROBLEMS).sort(), [
     'glibc-broken',
     'glibc-missing',
@@ -42,25 +42,30 @@ test('PROBLEMS has exactly the 8 problem codes', () => {
     'patchelf-missing',
     'readelf-failed',
     'readelf-missing',
+    'tar-failed',
+    'tar-missing',
   ]);
 });
 
 test('PROBLEMS fixed values match the table', () => {
   const expected = {
-    'glibc-missing': { auto: false, pkgs: [], commands: ['pkg install glibc-repo && pkg install glibc'] },
-    'glibc-broken': { auto: false, pkgs: [], commands: ['pkg install glibc-repo && pkg install glibc'] },
-    'patchelf-missing': { auto: true, pkgs: ['patchelf', 'libc++'], commands: ['pkg install patchelf libc++'] },
-    'patchelf-libcxx-mismatch': { auto: true, pkgs: ['libc++'], commands: ['pkg install libc++'] },
-    'patchelf-link-error': { auto: false, pkgs: [], commands: ['pkg update && pkg upgrade'] },
-    'patchelf-failed': { auto: false, pkgs: [], commands: ['pkg install patchelf libc++'] },
-    'readelf-missing': { auto: true, pkgs: ['llvm'], commands: ['pkg install llvm'] },
-    'readelf-failed': { auto: false, pkgs: [], commands: ['pkg install llvm'] },
+    'glibc-missing': { auto: true, pkgs: ['glibc'], repoPkgs: ['glibc-repo'], commands: ['pkg install glibc-repo && pkg install glibc'] },
+    'glibc-broken': { auto: false, pkgs: [], repoPkgs: [], commands: ['pkg install glibc-repo && pkg install glibc'] },
+    'patchelf-missing': { auto: true, pkgs: ['patchelf', 'libc++'], repoPkgs: [], commands: ['pkg install patchelf libc++'] },
+    'patchelf-libcxx-mismatch': { auto: true, pkgs: ['libc++'], repoPkgs: [], commands: ['pkg install libc++'] },
+    'patchelf-link-error': { auto: false, pkgs: [], repoPkgs: [], commands: ['pkg update && pkg upgrade'] },
+    'patchelf-failed': { auto: false, pkgs: [], repoPkgs: [], commands: ['pkg install patchelf libc++'] },
+    'readelf-missing': { auto: true, pkgs: ['llvm'], repoPkgs: [], commands: ['pkg install llvm'] },
+    'readelf-failed': { auto: false, pkgs: [], repoPkgs: [], commands: ['pkg install llvm'] },
+    'tar-missing': { auto: true, pkgs: ['tar'], repoPkgs: [], commands: ['pkg install tar'] },
+    'tar-failed': { auto: false, pkgs: [], repoPkgs: [], commands: ['pkg install tar'] },
   };
   for (const [code, want] of Object.entries(expected)) {
     const p = PROBLEMS[code];
     assert.ok(p, `missing code: ${code}`);
     assert.equal(p.auto, want.auto, `auto: ${code}`);
     assert.deepEqual(p.pkgs, want.pkgs, `pkgs: ${code}`);
+    assert.deepEqual(p.repoPkgs, want.repoPkgs, `repoPkgs: ${code}`);
     assert.deepEqual(p.commands, want.commands, `commands: ${code}`);
   }
 });
@@ -194,7 +199,7 @@ test('undefined stderr maps to patchelf-failed', () => {
 // makeProblem
 test('makeProblem returns the expected fields', () => {
   const p = makeProblem('patchelf-missing', 'detail text');
-  assert.deepEqual(Object.keys(p).sort(), ['auto', 'code', 'commands', 'detail', 'en', 'ja', 'pkgs']);
+  assert.deepEqual(Object.keys(p).sort(), ['auto', 'code', 'commands', 'detail', 'en', 'ja', 'pkgs', 'repoPkgs']);
   assert.equal(p.code, 'patchelf-missing');
   assert.equal(p.auto, true);
   assert.deepEqual(p.pkgs, ['patchelf', 'libc++']);
@@ -232,63 +237,184 @@ test('makeProblem throws for an unknown code', () => {
   assert.throws(() => makeProblem('no-such-code'), /unknown problem code/);
 });
 
+// makeProblem（repoPkgs の複製・全コードの形）
+test('makeProblem copies repoPkgs', () => {
+  const p = makeProblem('glibc-missing');
+  p.repoPkgs.push('x');
+  assert.deepEqual(makeProblem('glibc-missing').repoPkgs, ['glibc-repo']);
+  assert.deepEqual(PROBLEMS['glibc-missing'].repoPkgs, ['glibc-repo']);
+});
+
+test('makeProblem gives an array repoPkgs for every PROBLEMS code', () => {
+  const codes = Object.keys(PROBLEMS);
+  assert.equal(codes.length, 10);
+  for (const code of codes) {
+    assert.ok(Array.isArray(makeProblem(code).repoPkgs), `repoPkgs: ${code}`);
+  }
+});
+
 // buildAutoFix
 test('buildAutoFix returns null for an empty list', () => {
   assert.equal(buildAutoFix([]), null);
 });
 
-test('buildAutoFix returns null when a manual-only problem is present', () => {
-  const problems = [makeProblem('glibc-missing'), makeProblem('patchelf-missing')];
+test('buildAutoFix returns null when only manual problems are present', () => {
+  const problems = [makeProblem('glibc-broken'), makeProblem('patchelf-link-error')];
   assert.equal(buildAutoFix(problems), null);
 });
 
 test('buildAutoFix for patchelf-missing alone', () => {
   assert.deepEqual(buildAutoFix([makeProblem('patchelf-missing')]), {
+    steps: [{ args: ['install', 'patchelf', 'libc++'] }],
     pkgs: ['patchelf', 'libc++'],
     args: ['install', 'patchelf', 'libc++'],
+    manual: [],
   });
 });
 
 test('buildAutoFix for patchelf-missing and readelf-missing', () => {
   assert.deepEqual(
     buildAutoFix([makeProblem('patchelf-missing'), makeProblem('readelf-missing')]),
-    { pkgs: ['patchelf', 'libc++', 'llvm'], args: ['install', 'patchelf', 'libc++', 'llvm'] },
+    {
+      steps: [{ args: ['install', 'patchelf', 'libc++', 'llvm'] }],
+      pkgs: ['patchelf', 'libc++', 'llvm'],
+      args: ['install', 'patchelf', 'libc++', 'llvm'],
+      manual: [],
+    },
   );
 });
 
 test('buildAutoFix for libcxx-mismatch and readelf-missing', () => {
   assert.deepEqual(
     buildAutoFix([makeProblem('patchelf-libcxx-mismatch'), makeProblem('readelf-missing')]),
-    { pkgs: ['libc++', 'llvm'], args: ['install', 'libc++', 'llvm'] },
+    {
+      steps: [{ args: ['install', 'libc++', 'llvm'] }],
+      pkgs: ['libc++', 'llvm'],
+      args: ['install', 'libc++', 'llvm'],
+      manual: [],
+    },
   );
 });
 
 test('buildAutoFix for readelf-missing alone', () => {
   assert.deepEqual(buildAutoFix([makeProblem('readelf-missing')]), {
+    steps: [{ args: ['install', 'llvm'] }],
     pkgs: ['llvm'],
     args: ['install', 'llvm'],
+    manual: [],
   });
 });
 
 test('buildAutoFix deduplicates libc++ from patchelf-missing and libcxx-mismatch', () => {
   assert.deepEqual(
     buildAutoFix([makeProblem('patchelf-missing'), makeProblem('patchelf-libcxx-mismatch')]),
-    { pkgs: ['patchelf', 'libc++'], args: ['install', 'patchelf', 'libc++'] },
+    {
+      steps: [{ args: ['install', 'patchelf', 'libc++'] }],
+      pkgs: ['patchelf', 'libc++'],
+      args: ['install', 'patchelf', 'libc++'],
+      manual: [],
+    },
   );
 });
 
 test('buildAutoFix deduplicates llvm from two readelf-missing', () => {
   assert.deepEqual(
     buildAutoFix([makeProblem('readelf-missing'), makeProblem('readelf-missing')]),
-    { pkgs: ['llvm'], args: ['install', 'llvm'] },
+    {
+      steps: [{ args: ['install', 'llvm'] }],
+      pkgs: ['llvm'],
+      args: ['install', 'llvm'],
+      manual: [],
+    },
   );
 });
 
 test('buildAutoFix uses fixed package order regardless of input order', () => {
   assert.deepEqual(
     buildAutoFix([makeProblem('readelf-missing'), makeProblem('patchelf-missing')]),
-    { pkgs: ['patchelf', 'libc++', 'llvm'], args: ['install', 'patchelf', 'libc++', 'llvm'] },
+    {
+      steps: [{ args: ['install', 'patchelf', 'libc++', 'llvm'] }],
+      pkgs: ['patchelf', 'libc++', 'llvm'],
+      args: ['install', 'patchelf', 'libc++', 'llvm'],
+      manual: [],
+    },
   );
+});
+
+// buildAutoFix（追加）: 段階の分け方・パッケージ集合・manual・配列の非共有
+test('buildAutoFix for glibc-missing alone uses two stages: glibc-repo, then glibc', () => {
+  const r = buildAutoFix([makeProblem('glibc-missing')]);
+  assert.deepEqual(r.steps.map((s) => s.args), [['install', 'glibc-repo'], ['install', 'glibc']]);
+  assert.deepEqual(r.pkgs, ['glibc']);
+  assert.deepEqual(r.args, ['install', 'glibc']);
+  assert.deepEqual(r.manual, []);
+});
+
+test('buildAutoFix for glibc-missing and patchelf-missing puts glibc, patchelf, libc++ in stage 2', () => {
+  const r = buildAutoFix([makeProblem('glibc-missing'), makeProblem('patchelf-missing')]);
+  assert.deepEqual(r.steps.map((s) => s.args), [
+    ['install', 'glibc-repo'],
+    ['install', 'glibc', 'patchelf', 'libc++'],
+  ]);
+});
+
+test('buildAutoFix moves glibc-broken to manual and keeps only auto problems in steps', () => {
+  const r = buildAutoFix([makeProblem('glibc-missing'), makeProblem('glibc-broken')]);
+  assert.deepEqual(r.manual.map((p) => p.code), ['glibc-broken']);
+  assert.deepEqual(r.steps.map((s) => s.args), [['install', 'glibc-repo'], ['install', 'glibc']]);
+  assert.deepEqual(r.pkgs, ['glibc']);
+});
+
+test('buildAutoFix for tar-missing alone is one stage', () => {
+  assert.deepEqual(buildAutoFix([makeProblem('tar-missing')]), {
+    steps: [{ args: ['install', 'tar'] }],
+    pkgs: ['tar'],
+    args: ['install', 'tar'],
+    manual: [],
+  });
+});
+
+test('buildAutoFix for tar-missing, readelf-missing and patchelf-missing uses fixed package order', () => {
+  const r = buildAutoFix([
+    makeProblem('tar-missing'),
+    makeProblem('readelf-missing'),
+    makeProblem('patchelf-missing'),
+  ]);
+  assert.deepEqual(r.steps.map((s) => s.args), [['install', 'patchelf', 'libc++', 'llvm', 'tar']]);
+  assert.deepEqual(r.pkgs, ['patchelf', 'libc++', 'llvm', 'tar']);
+  assert.deepEqual(r.args, ['install', 'patchelf', 'libc++', 'llvm', 'tar']);
+});
+
+test('buildAutoFix with two glibc-missing lists glibc-repo only once', () => {
+  const r = buildAutoFix([makeProblem('glibc-missing'), makeProblem('glibc-missing')]);
+  assert.deepEqual(r.steps.map((s) => s.args), [['install', 'glibc-repo'], ['install', 'glibc']]);
+  assert.deepEqual(r.pkgs, ['glibc']);
+});
+
+test('buildAutoFix result does not share arrays with its inputs or PROBLEMS', () => {
+  const problems = [makeProblem('glibc-missing'), makeProblem('patchelf-missing'), makeProblem('glibc-broken')];
+  const r = buildAutoFix(problems);
+  r.steps[0].args.push('x');
+  r.steps[1].args.push('x');
+  r.pkgs.push('x');
+  r.args.push('x');
+  r.manual.push('x');
+  assert.deepEqual(problems[0].pkgs, ['glibc']);
+  assert.deepEqual(problems[0].repoPkgs, ['glibc-repo']);
+  assert.deepEqual(problems[1].pkgs, ['patchelf', 'libc++']);
+  assert.equal(problems.length, 3);
+  assert.deepEqual(makeProblem('glibc-missing').repoPkgs, ['glibc-repo']);
+  assert.deepEqual(PROBLEMS['glibc-missing'].pkgs, ['glibc']);
+  assert.deepEqual(PROBLEMS['glibc-missing'].repoPkgs, ['glibc-repo']);
+  assert.deepEqual(PROBLEMS['patchelf-missing'].pkgs, ['patchelf', 'libc++']);
+});
+
+test('buildAutoFix returns null for a non-array input', () => {
+  assert.equal(buildAutoFix(null), null);
+  assert.equal(buildAutoFix(undefined), null);
+  assert.equal(buildAutoFix('glibc-missing'), null);
+  assert.equal(buildAutoFix({}), null);
+  assert.equal(buildAutoFix([]), null);
 });
 
 // PrereqError
@@ -431,7 +557,7 @@ test('glibc loader missing (ENOENT) is reported as glibc-missing and not execute
   assert.deepEqual(checkPrerequisites({ spawn: s.spawn, fsApi: f }), [
     makeProblem('glibc-missing', 'ENOENT: no such file'),
   ]);
-  assert.deepEqual(s.calls.map((c) => c.cmd), ['patchelf', 'readelf']);
+  assert.deepEqual(s.calls.map((c) => c.cmd), ['patchelf', 'readelf', 'tar']);
 });
 
 test('glibc loader not executable (EACCES) is reported as glibc-broken and not executed', () => {
@@ -440,7 +566,7 @@ test('glibc loader not executable (EACCES) is reported as glibc-broken and not e
   assert.deepEqual(checkPrerequisites({ spawn: s.spawn, fsApi: f }), [
     makeProblem('glibc-broken', 'EACCES: permission denied'),
   ]);
-  assert.deepEqual(s.calls.map((c) => c.cmd), ['patchelf', 'readelf']);
+  assert.deepEqual(s.calls.map((c) => c.cmd), ['patchelf', 'readelf', 'tar']);
 });
 
 test('glibc loader spawn failure is reported as glibc-broken with message and stderr', () => {
@@ -466,7 +592,7 @@ test('all missing items are collected in detection order', () => {
   ]);
 });
 
-test('glibc spawn failure does not stop patchelf and readelf checks', () => {
+test('glibc spawn failure does not stop patchelf, readelf and tar checks', () => {
   const s = fakeSpawn({
     [GLIBC_LD_PATH]: execError({ status: 1, message: 'Command failed' }),
     patchelf: execError({ status: 127, stderr: 'cannot locate symbol "_ZNSt6__ndk1x"' }),
@@ -478,25 +604,76 @@ test('glibc spawn failure does not stop patchelf and readelf checks', () => {
     'patchelf-libcxx-mismatch',
     'readelf-failed',
   ]);
-  assert.equal(s.calls.length, 3);
+  assert.equal(s.calls.length, 4);
 });
 
 // spawn の引数・オプション
 test('each spawn call uses --version, pipe stdio, utf8 and 10s timeout', () => {
   const s = fakeSpawn();
   checkPrerequisites({ spawn: s.spawn, fsApi: fakeFsApi() });
-  assert.equal(s.calls.length, 3);
+  assert.equal(s.calls.length, 4);
   for (const c of s.calls) {
     assert.deepEqual(c.args, ['--version'], `args: ${c.cmd}`);
     assert.deepEqual(c.opts, { stdio: 'pipe', encoding: 'utf8', timeout: 10000 }, `opts: ${c.cmd}`);
   }
 });
 
-// spawn の呼び出し順と回数（glibc 正常 → patchelf → readelf の3回）
-test('spawn is called in order: glibc loader, patchelf, readelf (3 calls)', () => {
+// spawn の呼び出し順と回数（glibc 正常 → patchelf → readelf → tar の4回）
+test('spawn is called in order: glibc loader, patchelf, readelf, tar (4 calls)', () => {
   const s = fakeSpawn();
   checkPrerequisites({ spawn: s.spawn, fsApi: fakeFsApi() });
-  assert.deepEqual(s.calls.map((c) => c.cmd), [GLIBC_LD_PATH, 'patchelf', 'readelf']);
+  assert.deepEqual(s.calls.map((c) => c.cmd), [GLIBC_LD_PATH, 'patchelf', 'readelf', 'tar']);
+});
+
+// checkPrerequisites（tar）: 検出の有無・分類・検出順・成功時の呼び出し
+test('tar ENOENT is reported as tar-missing at the end of the list', () => {
+  const s = fakeSpawn({ tar: execError({ code: 'ENOENT' }) });
+  const problems = checkPrerequisites({ spawn: s.spawn, fsApi: fakeFsApi() });
+  assert.deepEqual(problems.map((p) => p.code), ['tar-missing']);
+  const last = problems[problems.length - 1];
+  assert.equal(last.code, 'tar-missing');
+  assert.equal(last.auto, true);
+  assert.deepEqual(last.pkgs, ['tar']);
+});
+
+test('tar non-zero exit is reported as tar-failed with stderr and status in detail', () => {
+  const s = fakeSpawn({ tar: execError({ status: 1, stderr: 'x' }) });
+  const problems = checkPrerequisites({ spawn: s.spawn, fsApi: fakeFsApi() });
+  assert.deepEqual(problems, [makeProblem('tar-failed', 'x\nstatus: 1')]);
+  assert.equal(problems[0].auto, false);
+});
+
+test('tar timeout with SIGTERM is reported as tar-failed with signal in detail', () => {
+  const s = fakeSpawn({ tar: execError({ code: 'ETIMEDOUT', signal: 'SIGTERM' }) });
+  assert.deepEqual(checkPrerequisites({ spawn: s.spawn, fsApi: fakeFsApi() }), [
+    makeProblem('tar-failed', 'signal: SIGTERM'),
+  ]);
+});
+
+test('tar EACCES without status, stderr or signal is reported as tar-failed with empty detail', () => {
+  const s = fakeSpawn({ tar: execError({ code: 'EACCES' }) });
+  assert.deepEqual(checkPrerequisites({ spawn: s.spawn, fsApi: fakeFsApi() }), [
+    makeProblem('tar-failed', ''),
+  ]);
+});
+
+test('patchelf, readelf and tar failures are detected in order glibc, patchelf, readelf, tar', () => {
+  const s = fakeSpawn({
+    patchelf: execError({ code: 'ENOENT' }),
+    readelf: execError({ code: 'ENOENT' }),
+    tar: execError({ code: 'ENOENT' }),
+  });
+  const problems = checkPrerequisites({ spawn: s.spawn, fsApi: fakeFsApi() });
+  assert.deepEqual(problems.map((p) => p.code), ['patchelf-missing', 'readelf-missing', 'tar-missing']);
+  assert.deepEqual(s.calls.map((c) => c.cmd), [GLIBC_LD_PATH, 'patchelf', 'readelf', 'tar']);
+});
+
+test('all checks pass calls tar once with --version', () => {
+  const s = fakeSpawn();
+  assert.deepEqual(checkPrerequisites({ spawn: s.spawn, fsApi: fakeFsApi() }), []);
+  const tarCalls = s.calls.filter((c) => c.cmd === 'tar');
+  assert.equal(tarCalls.length, 1);
+  assert.deepEqual(tarCalls[0].args, ['--version']);
 });
 
 // ---- resolvePrerequisites の追加テスト（stub のみ使用。実際の pkg / patchelf / readelf / bash は呼ばない） ----
@@ -606,7 +783,7 @@ async function runResolve(problems, opts = {}) {
 
 // 1. 手動のみの問題が混在 → 自動実行せず exitCode 1、spawnSync は一切呼ばれず、各問題の ja/en は stderr に1回ずつ出る
 test('mixed manual-only problems: exit 1, no spawnSync call at all, each ja/en printed once', async () => {
-  const problems = [makeProblem('patchelf-missing'), makeProblem('glibc-missing')];
+  const problems = [makeProblem('glibc-broken'), makeProblem('patchelf-link-error')];
   const r = await runResolve(problems, { isTTY: true });
   assert.ok(r.err instanceof PrereqError);
   assert.equal(r.err.exitCode, 1);
@@ -736,16 +913,16 @@ test('non-TTY stdin: no question, PrereqError exit 1, no pkg run', async () => {
   assert.equal(r.runCalls.filter((c) => c.cmd === TERMUX_PKG).length, 0);
 });
 
-// 7. describeProblems の内容は stderr に出て、PrereqError.userMessage には ja/en を含まず [code] とコマンドを含む
-test('describeProblems goes to stderr; userMessage has [code] and commands but no ja/en', async () => {
+// 7. describeProblems の内容は stderr に出て、PrereqError.userMessage には ja/en・[code]・コマンドを含む
+test('describeProblems goes to stderr; userMessage has ja/en, [code] and commands', async () => {
   const problems = [makeProblem('patchelf-missing'), makeProblem('readelf-missing')];
   const r = await runResolve(problems, { isTTY: false });
   assert.ok(r.err instanceof PrereqError);
   for (const p of problems) {
     assert.ok(r.out.includes(p.ja), `stderr ja: ${p.code}`);
     assert.ok(r.out.includes(p.en), `stderr en: ${p.code}`);
-    assert.ok(!r.err.userMessage.includes(p.ja), `no ja in userMessage: ${p.code}`);
-    assert.ok(!r.err.userMessage.includes(p.en), `no en in userMessage: ${p.code}`);
+    assert.ok(r.err.userMessage.includes(p.ja), `ja in userMessage: ${p.code}`);
+    assert.ok(r.err.userMessage.includes(p.en), `en in userMessage: ${p.code}`);
     assert.ok(r.err.userMessage.includes('[' + p.code + ']'), `code in userMessage: ${p.code}`);
     for (const cmd of p.commands) {
       assert.ok(r.err.userMessage.includes(cmd), `command in userMessage: ${cmd}`);
@@ -972,8 +1149,8 @@ test('consent screen is written to stderr on every path, with notes and the comm
   }
 });
 
-// 8. 拒否・EOF・SIGINT の userMessage は手動コマンドを含み、問題の ja/en 説明文は含まない
-test('refuse, EOF and SIGINT userMessage has the manual command and no ja/en text', async () => {
+// 8. 拒否・EOF・SIGINT の userMessage は手動コマンドと問題の ja/en 説明文を含む
+test('refuse, EOF and SIGINT userMessage has the manual command and ja/en text', async () => {
   const p = makeProblem('patchelf-missing');
   const cases = [
     { name: 'refuse', inputs: ['n'] },
@@ -984,8 +1161,8 @@ test('refuse, EOF and SIGINT userMessage has the manual command and no ja/en tex
     const r = await runConsent(c.inputs);
     assert.ok(r.err instanceof PrereqError, c.name);
     assert.ok(r.err.userMessage.includes('pkg install patchelf libc++'), `${c.name}: manual command`);
-    assert.ok(!r.err.userMessage.includes(p.ja), `${c.name}: no ja`);
-    assert.ok(!r.err.userMessage.includes(p.en), `${c.name}: no en`);
+    assert.ok(r.err.userMessage.includes(p.ja), `${c.name}: ja`);
+    assert.ok(r.err.userMessage.includes(p.en), `${c.name}: en`);
   }
 });
 
@@ -1165,10 +1342,194 @@ test('ensurePrerequisites: no problems → no readline or pkg; fixed → check t
 
 // 7. 手動のみ混在を ensurePrerequisites で実行 → exitCode 1、pkg なし、check は1回
 test('ensurePrerequisites: manual-only mix → exitCode 1, no pkg run, check once', async () => {
-  const scripted = scriptedCheck([makeProblem('patchelf-missing'), makeProblem('glibc-missing')]);
+  const scripted = scriptedCheck([makeProblem('glibc-broken'), makeProblem('patchelf-link-error')]);
   const r = await runPkgFlow([], { ensure: true, check: scripted.fn });
   assert.ok(r.err instanceof PrereqError);
   assert.equal(r.err.exitCode, 1);
   assert.equal(r.pkgCalls.length, 0);
   assert.equal(scripted.calls.length, 1);
+});
+
+// ---- resolvePrerequisites の多段実行・混在・再検査（I2c）----
+
+// pkg 呼び出しごとに results[n] を返す（尽きたら status 0）。段ごとに結果を変えるために使う
+function stagedPkg(...results) {
+  let n = 0;
+  return () => {
+    const r = results[n];
+    n += 1;
+    return r === undefined ? { status: 0 } : r;
+  };
+}
+
+// 混在（自動: patchelf-libcxx-mismatch、手動: glibc-broken）の問題一覧
+function mixedProblems() {
+  return [makeProblem('patchelf-libcxx-mismatch'), makeProblem('glibc-broken')];
+}
+
+// 1. glibc-missing だけ: glibc-repo → glibc の2段を順に実行し、再検査は1回。同意画面に番号付きの2コマンドと glibc-repo の注意を出す
+test('multi-stage: glibc-missing runs glibc-repo then glibc, check once, numbered commands and repo notes shown', async () => {
+  const check = scriptedCheck();
+  const r = await runPkgFlow([makeProblem('glibc-missing')], { check: check.fn });
+  assert.equal(r.err, null);
+  assert.equal(r.pkgCalls.length, 2);
+  assert.deepEqual(r.pkgCalls.map((c) => c.args), [['install', 'glibc-repo'], ['install', 'glibc']]);
+  for (const call of r.pkgCalls) {
+    assert.equal(call.opts.stdio, 'inherit');
+    assert.equal(call.opts.env.TERMUX_PKG_NO_MIRROR_SELECT, '1');
+  }
+  assert.equal(check.calls.length, 1);
+  assert.ok(r.out.includes(`  1. ${TERMUX_PKG} install glibc-repo`));
+  assert.ok(r.out.includes(`  2. ${TERMUX_PKG} install glibc`));
+  assert.ok(r.out.includes('glibc-repo の導入はリポジトリ設定を永続的に変更します'));
+  assert.ok(r.out.includes('Installing glibc-repo permanently changes the repository settings'));
+});
+
+// 2. glibc-missing と patchelf-missing: 2段目は glibc, patchelf, libc++ を1回の pkg install にまとめる
+test('multi-stage: glibc-missing with patchelf-missing makes stage 2 install glibc patchelf libc++', async () => {
+  const check = scriptedCheck();
+  const r = await runPkgFlow([makeProblem('glibc-missing'), makeProblem('patchelf-missing')], { check: check.fn });
+  assert.equal(r.err, null);
+  assert.deepEqual(r.pkgCalls.map((c) => c.args), [['install', 'glibc-repo'], ['install', 'glibc', 'patchelf', 'libc++']]);
+  assert.equal(check.calls.length, 1);
+});
+
+// 3. 1段目の失敗（status / signal / error のどれでも）: 2段目は実行せず、再検査もしない。変更がなかった保証がない旨を案内する
+test('multi-stage: stage 1 failure (status, signal or error) stops before stage 2 and skips check', async () => {
+  const cases = [
+    { name: 'status 1', result: { status: 1 }, state: 'status: 1' },
+    { name: 'signal SIGTERM', result: { signal: 'SIGTERM', status: null }, state: 'signal: SIGTERM' },
+    { name: 'error', result: { error: new Error('spawn failed'), status: null }, state: 'error: spawn failed' },
+  ];
+  for (const c of cases) {
+    const check = scriptedCheck();
+    const r = await runPkgFlow([makeProblem('glibc-missing')], { pkgResult: stagedPkg(c.result), check: check.fn });
+    assert.ok(r.err instanceof PrereqError, c.name);
+    assert.equal(r.err.exitCode, 1, c.name);
+    assert.equal(r.pkgCalls.length, 1, c.name);
+    assert.equal(check.calls.length, 0, c.name);
+    assert.ok(r.err.userMessage.includes('1 段目'), c.name);
+    assert.ok(r.err.userMessage.includes('変更がなかった保証はありません'), c.name);
+    assert.ok(r.err.userMessage.includes(c.state), c.name);
+  }
+});
+
+// 4. 1段目成功・2段目失敗（status 2）: リポジトリ設定の変更可能性を案内し、再検査はしない
+test('multi-stage: stage 1 success and stage 2 failure reports possible repo changes and skips check', async () => {
+  const check = scriptedCheck();
+  const r = await runPkgFlow([makeProblem('glibc-missing')], {
+    pkgResult: stagedPkg({ status: 0 }, { status: 2 }),
+    check: check.fn,
+  });
+  assert.ok(r.err instanceof PrereqError);
+  assert.equal(r.err.exitCode, 1);
+  assert.equal(r.pkgCalls.length, 2);
+  assert.equal(check.calls.length, 0);
+  assert.ok(r.err.userMessage.includes('1 段目は成功し、リポジトリ設定などが変更されている可能性があります'));
+  assert.ok(r.err.userMessage.includes('2 段目'));
+  assert.ok(r.err.userMessage.includes('status: 2'));
+});
+
+// 5. 両段成功後も glibc-missing が残る: 再実行せず手動案内で終わる。実行した段と終了状態、pkg reinstall glibc の案内を含む
+test('multi-stage: both stages succeed but glibc-missing remains gives manual guidance without rerun', async () => {
+  const check = scriptedCheck([makeProblem('glibc-missing')]);
+  const r = await runPkgFlow([makeProblem('glibc-missing')], { check: check.fn });
+  assert.ok(r.err instanceof PrereqError);
+  assert.equal(r.err.exitCode, 1);
+  assert.equal(r.pkgCalls.length, 2);
+  assert.equal(check.calls.length, 1);
+  const m = r.err.userMessage;
+  const g = makeProblem('glibc-missing');
+  assert.ok(m.includes('自動実行後も問題が残っています'));
+  assert.ok(m.includes('  - [glibc-missing]'));
+  assert.ok(m.includes('実行した段と終了状態'));
+  assert.ok(m.includes(`  1. ${TERMUX_PKG} install glibc-repo → status: 0`));
+  assert.ok(m.includes(`  2. ${TERMUX_PKG} install glibc → status: 0`));
+  assert.ok(m.includes('pkg reinstall glibc'));
+  assert.ok(m.includes(g.ja));
+  assert.ok(m.includes(g.en));
+});
+
+// 6. 両段成功後に readelf-failed が残る（新しい問題種別）: 日英説明と手動コマンド pkg install llvm を案内する
+test('multi-stage: both stages succeed but readelf-failed remains gives its ja/en text and manual command', async () => {
+  const check = scriptedCheck([makeProblem('readelf-failed')]);
+  const r = await runPkgFlow([makeProblem('glibc-missing')], { check: check.fn });
+  assert.ok(r.err instanceof PrereqError);
+  assert.equal(r.err.exitCode, 1);
+  assert.equal(r.pkgCalls.length, 2);
+  assert.equal(check.calls.length, 1);
+  const p = makeProblem('readelf-failed');
+  assert.ok(r.err.userMessage.includes(p.ja));
+  assert.ok(r.err.userMessage.includes(p.en));
+  assert.ok(r.err.userMessage.includes('pkg install llvm'));
+});
+
+// 7(a). 混在: 同意画面に手動項目の見出しと glibc-broken の手動コマンドを出し、実行は libc++ の1段だけ。再検査で残った glibc-broken を案内する
+test('mixed auto and manual: consent lists manual items, runs only the libc++ stage, reports remaining glibc-broken', async () => {
+  const check = scriptedCheck([makeProblem('glibc-broken')]);
+  const r = await runPkgFlow(mixedProblems(), { inputs: ['y'], check: check.fn });
+  assert.ok(r.out.includes('手動で対応が必要な項目（自動では実行しません） / Items that need manual action (not run automatically):'));
+  assert.ok(r.out.includes('pkg install glibc-repo && pkg install glibc'));
+  assert.deepEqual(r.pkgCalls.map((c) => c.args), [['install', 'libc++']]);
+  assert.ok(r.err instanceof PrereqError);
+  assert.equal(r.err.exitCode, 1);
+  const g = makeProblem('glibc-broken');
+  assert.ok(r.err.userMessage.includes(g.ja));
+  assert.ok(r.err.userMessage.includes(g.en));
+  assert.equal(check.calls.length, 1);
+});
+
+// 7(b)(c)(d). 混在: 拒否は exitCode 0、EOF と SIGINT は exitCode 1。いずれも pkg と再検査は動かない
+test('mixed auto and manual: refusal, EOF and SIGINT never run pkg or check', async () => {
+  const cases = [
+    { name: 'refuse', inputs: ['n'], exitCode: 0 },
+    { name: 'EOF', inputs: [{ eof: true }], exitCode: 1 },
+    { name: 'SIGINT', inputs: [{ sigint: true }], exitCode: 1 },
+  ];
+  for (const c of cases) {
+    const check = scriptedCheck();
+    const r = await runPkgFlow(mixedProblems(), { inputs: c.inputs, check: check.fn });
+    assert.ok(r.err instanceof PrereqError, c.name);
+    assert.equal(r.err.exitCode, c.exitCode, c.name);
+    assert.equal(r.pkgCalls.length, 0, c.name);
+    assert.equal(check.calls.length, 0, c.name);
+  }
+});
+
+// 7(e). 混在・非TTY: 同意画面は出さず、pkg も動かさず、手動コマンドを案内する
+test('mixed auto and manual: non-TTY shows no consent screen and gives manual guidance', async () => {
+  const check = scriptedCheck();
+  const r = await runPkgFlow(mixedProblems(), { isTTY: false, inputs: [], check: check.fn });
+  assert.ok(r.err instanceof PrereqError);
+  assert.equal(r.err.exitCode, 1);
+  assert.equal(r.pkgCalls.length, 0);
+  assert.equal(check.calls.length, 0);
+  assert.equal(r.rl.createInterfaceArgs.length, 0);
+  assert.ok(!r.out.includes('次の前提条件を自動で修復します'));
+  assert.ok(r.err.userMessage.includes('pkg install libc++'));
+  assert.ok(r.err.userMessage.includes('pkg install glibc-repo && pkg install glibc'));
+});
+
+// 7(f). 混在: libc++ の1段を実行し、再検査で問題が無ければ正常終了する
+test('mixed auto and manual: when the re-check finds no problems, resolve after the libc++ stage', async () => {
+  const check = scriptedCheck();
+  const r = await runPkgFlow(mixedProblems(), { check: check.fn });
+  assert.equal(r.err, null);
+  assert.deepEqual(r.pkgCalls.map((c) => c.args), [['install', 'libc++']]);
+  assert.equal(check.calls.length, 1);
+});
+
+// 8. 1段だけ（自動: patchelf-libcxx-mismatch）: 同意画面に glibc-repo の注意を出さず、pkg が status 1 で失敗すると終了状態を案内する
+test('single stage: no glibc-repo note on consent, and pkg status 1 gives the status failure message', async () => {
+  const check = scriptedCheck();
+  const r = await runPkgFlow([makeProblem('patchelf-libcxx-mismatch')], {
+    pkgResult: stagedPkg({ status: 1 }),
+    check: check.fn,
+  });
+  assert.ok(!r.out.includes('glibc-repo の導入はリポジトリ設定を永続的に変更します'));
+  assert.ok(r.err instanceof PrereqError);
+  assert.equal(r.err.exitCode, 1);
+  assert.equal(r.pkgCalls.length, 1);
+  assert.equal(check.calls.length, 0);
+  assert.ok(r.err.userMessage.includes('pkg install が終了状態 status: 1 で失敗しました'));
 });
