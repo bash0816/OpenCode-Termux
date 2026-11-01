@@ -6,14 +6,14 @@ Termux 向け OpenCode CLI wrapper package です。
 
 > **Notice / お知らせ**
 >
-> **Please update to 2.2.2.** It fixes the first-run failure `cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm"` (an outdated `libc++` that `patchelf` cannot start with). Before downloading anything, opencode-termux now checks that the glibc loader, `patchelf` and `readelf` can run, explains what is missing, and offers the matching `pkg install` after you confirm.
+> **Please update to 2.2.5.** It fixes the first-run failure `cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm"` (an outdated `libc++` that `patchelf` cannot start with). Before downloading anything, opencode-termux now checks that the glibc loader, `patchelf` and `readelf` can run, explains what is missing, and offers the matching `pkg install` after you confirm. It also offers to install a missing glibc loader or tar after you confirm.
 >
 > 1. Update the wrapper: `npm install -g @bash0816/opencode-termux@latest`
 > 2. Install anything that is missing (see [Prerequisites](#prerequisites--前提条件)): `pkg install patchelf libc++ llvm`, and `pkg install glibc-repo && pkg install glibc` if the glibc loader is missing.
 >
 > If you are still on 2.2.0 or earlier and see this error, run `pkg install libc++` and try again ([details](#if-setup-fails-with-cannot-locate-symbol-_znst6__ndk1--セットアップが-cannot-locate-symbol-で失敗する場合)).
 >
-> **2.2.2 への更新をお願いします。** 初回起動の失敗 `cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm"`（`libc++` が古く、`patchelf` が起動できない）が修正されています。ダウンロードの前に、glibc のローダー、`patchelf`、`readelf` が実行できるかを確認し、足りないものを説明して、確認のうえで該当の `pkg install` を実行します。
+> **2.2.5 への更新をお願いします。** 初回起動の失敗 `cannot locate symbol "_ZNSt6__ndk113__hash_memoryEPKvm"`（`libc++` が古く、`patchelf` が起動できない）が修正されています。ダウンロードの前に、glibc のローダー、`patchelf`、`readelf` が実行できるかを確認し、足りないものを説明して、確認のうえで該当の `pkg install` を実行します。また、glibc のローダーや tar が不足している場合も、確認のうえで導入します。
 >
 > 1. ラッパーを更新: `npm install -g @bash0816/opencode-termux@latest`
 > 2. 足りないものを入れる（[前提条件](#prerequisites--前提条件) を参照）: `pkg install patchelf libc++ llvm`。glibc のローダーが無い場合は `pkg install glibc-repo && pkg install glibc` も実行してください。
@@ -119,9 +119,9 @@ for this device. Subsequent runs reuse the cached, verified installation.
 初回起動時に npm から公式 OpenCode バイナリがダウンロードされ、このデバイス向けに
 パッチが適用されます。以降の起動ではキャッシュ済みの検証済みインストールを再利用します。
 
-**Tested with OpenCode 2.2.2 on Termux/Android ARM64.**
+**Tested with OpenCode 2.2.5 on Termux/Android ARM64.**
 
-**OpenCode 2.2.2・Termux/Android ARM64 で動作確認済み。**
+**OpenCode 2.2.5・Termux/Android ARM64 で動作確認済み。**
 
 ## Update / 更新
 
