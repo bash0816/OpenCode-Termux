@@ -78,6 +78,10 @@ pkg install llvm
 
 readelf は llvm パッケージが提供します / readelf is provided by the llvm package
 
+On first run (when setup runs), `opencode-termux` checks for missing prerequisites: `glibc`, `patchelf`, `libc++`, `llvm` (for readelf), and `tar`. If any are missing, it shows the commands it will run and asks for confirmation (type `y`) before installing them with `pkg install`. If you answer `n`, or if the terminal is non-interactive, it installs nothing, shows the commands to run manually, and exits. If `glibc` is missing, `glibc-repo` (which adds the repository configuration) is installed first. Changes to the repository configuration are persistent, and there is no guarantee they can be reverted. If you need to remove them, check the effects on dependencies first, then remove them manually. It does not run a full upgrade (`pkg update && pkg upgrade`) automatically. For problems it cannot fix automatically (for example, package link errors or a loader that cannot run), it shows the commands to run manually and exits.
+
+初回セットアップの実行時、`opencode-termux` は不足している前提パッケージ(`glibc`、`patchelf`、`libc++`、`llvm`(readelf 用)、`tar`)を検査します。不足があれば、実行するコマンドを表示し、確認(`y` を入力)のうえで `pkg install` により導入します。`n` と答えた場合、または対話できない(非対話の)端末の場合は、何も導入せず、手動で実行するコマンドを案内して終了します。`glibc` が無い場合は、先に `glibc-repo`(リポジトリ設定の追加)を導入します。リポジトリ設定の変更は永続的で、元に戻す保証はありません。削除が必要な場合は、依存関係などへの影響を確認したうえで、手動で行ってください。全体更新(`pkg update && pkg upgrade`)は自動では実行しません。パッケージのリンクエラーや実行できないローダーなど、自動では直せない問題の場合は、手動で実行するコマンドを案内して終了します。
+
 ### If setup fails with `cannot locate symbol "_ZNSt6__ndk1..."` / セットアップが `cannot locate symbol` で失敗する場合
 
 On first run, `opencode` may stop with an error like this:
