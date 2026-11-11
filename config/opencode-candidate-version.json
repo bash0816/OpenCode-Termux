@@ -6,6 +6,6 @@
   "patchelf_verified": true,
   "source_repo": "anomalyco/opencode",
   "upstream_package": "@opencode/cli-linux-arm64",
-  "detected_date": "2026-11-11",
+  "detected_date": "2026-11-12",
   "status": "pending_device_verification"
 }
