@@ -119,9 +119,9 @@ for this device. Subsequent runs reuse the cached, verified installation.
 初回起動時に npm から公式 OpenCode バイナリがダウンロードされ、このデバイス向けに
 パッチが適用されます。以降の起動ではキャッシュ済みの検証済みインストールを再利用します。
 
-**Tested with OpenCode 2.2.6 on Termux/Android ARM64.**
+**Tested with OpenCode 2.2.7 on Termux/Android ARM64.**
 
-**OpenCode 2.2.6・Termux/Android ARM64 で動作確認済み。**
+**OpenCode 2.2.7・Termux/Android ARM64 で動作確認済み。**
 
 ## Update / 更新
 
