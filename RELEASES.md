@@ -1,4 +1,15 @@
-## 2.3.2 — 2026-11-23 ✅ Current \/ 現行版
+## 2.4.1 — 2026-11-26 ✅ Current \/ 現行版
+
+OpenCode CLI (@opencode/cli-linux-arm64) v2.4.1 対応。Termux 実機検証済み。
+OpenCode CLI v2.4.1 support. Verified on Termux (Android ARM64).
+
+```sh
+npm install -g @bash0816/opencode-termux
+```
+
+---
+
+## 2.3.2 — 2026-11-23 ✅
 
 OpenCode CLI (@opencode/cli-linux-arm64) v2.3.2 対応。Termux 実機検証済み。
 OpenCode CLI v2.3.2 support. Verified on Termux (Android ARM64).
